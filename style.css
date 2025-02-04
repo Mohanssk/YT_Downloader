@@ -1,0 +1,116 @@
+/* style.css */
+
+/* Define color palette */
+:root {
+    --color-primary: #000814;  /* Very Dark Blue */
+    --color-secondary: #001d3d;  /* Dark Blue */
+    --color-tertiary: #003566;  /* Medium Blue */
+    --color-accent: #ffc300;  /* Bright Yellow */
+    --color-dark: #ffd60a;  /* Light Yellow */
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: var(--color-secondary);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;  /* Ensures body takes at least the full viewport height */
+}
+
+.maincon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1 0 auto;  /* Allows the container to expand and take available space */
+    padding: 20px;
+}
+
+.childcontain {
+    width: 500px;
+    padding: 20px;
+    background-color: var(--color-tertiary);
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+h1 {
+    color: var(--color-dark);
+    margin: 0;
+}
+
+.form-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;  /* Stack form elements vertically */
+    align-items: center;
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--color-dark);
+}
+
+.input-field {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid var(--color-primary);
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.submit-button {
+    background-color: var(--color-accent);
+    border: none;
+    color: black;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 100%;
+    max-width: 150px;  /* Limit button width */
+}
+
+.submit-button:hover {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+.response-message {
+    margin-top: 20px;
+    text-align: center;
+    color: var(--color-dark);
+}
+
+.video-container {
+    margin-top: 20px;
+    text-align: center;
+    display: none;  /* Hide video container initially */
+}
+
+.video-player {
+    max-width: 100%;
+    border-radius: 8px;
+}
+
+footer {
+    background-color: var(--color-primary);
+    color: var(--color-dark);
+    text-align: center;
+    padding: 10px;
+    width: 100%;  /* Ensure footer spans full width */
+    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    bottom: 0;
+}

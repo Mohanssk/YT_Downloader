@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Video Downloader</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="maincon">
+        <div class="childcontain">
+            <header>
+                <h1>YouTube Video Downloader</h1>
+            </header>
+            <form id="download-form" class="form-container">
+                <label for="url">YouTube Video URL:</label>
+                <input type="text" id="url" name="url" class="input-field" required>
+                <label for="output_path">Output Path (optional):</label>
+                <input type="text" id="output_path" name="output_path" class="input-field">
+                <button type="submit" class="submit-button">Download Video</button>
+            </form>
+            <div id="response" class="response-message"></div>
+            <div id="video-container" class="video-container">
+                <video id="video-player" controls class="video-player">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <p>&copy; Devoloped By MohanKaruparthi</p>
+    </footer>
+    <script>
+        document.getElementById('download-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const url = document.getElementById('url').value;
+            const outputPath = document.getElementById('output_path').value || 'downloads';
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url, output_path: outputPath })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                document.getElementById('response').innerText = result.message || 'An error occurred';
+
+                const videoContainer = document.getElementById('video-container');
+                const videoPlayer = document.getElementById('video-player');
+
+                if (result.file_url) {
+                    videoPlayer.src = `http://127.0.0.1:8000${result.file_url}`;
+                    videoContainer.style.display = 'block';
+                } else {
+                    videoContainer.style.display = 'none';
+                }
+            } catch (error) {
+                document.getElementById('response').innerText = `Fetch error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
