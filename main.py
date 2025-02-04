@@ -2,12 +2,16 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
 import yt_dlp
 import os
 from typing import Optional
 
 app = FastAPI()
+
+# Add the root endpoint to prevent the 404 error
+@app.get("/")
+def read_root():
+    return {"message": "Server is up and running!"}
 
 app.add_middleware(
     CORSMiddleware,
