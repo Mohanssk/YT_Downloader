@@ -1,1 +1,5 @@
-uvicorn==0.18.3
+fastapi
+uvicorn
+yt-dlp
+pydantic
+requests
