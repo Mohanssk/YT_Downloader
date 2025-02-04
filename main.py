@@ -40,17 +40,21 @@ async def download_video(request: DownloadRequest):
     url = request.url
     output_path = request.output_path
 
+    # Check if the cookies file exists
+    if not os.path.exists('cookies.txt'):
+        raise HTTPException(status_code=400, detail="Cookies file (cookies.txt) not found. Please provide a valid cookies file.")
+
     ydl_opts = {
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]',  # Force MP4 format
         'merge_output_format': 'mp4',  # Ensure final output is MP4
-        'outtmpl': f'{output_path}/%(title)s.%(ext)s',
-        'noplaylist': True,
-        'quiet': False,
-        'cookiefile': 'cookies.txt',  # Use cookies if needed
+        'outtmpl': f'{output_path}/%(title)s.%(ext)s',  # Output path and filename template
+        'noplaylist': True,  # Don't download playlists
+        'quiet': False,  # Show the download progress
+        'cookiefile': 'cookies.txt',  # Use cookies from cookies.txt
     }
 
     try:
-        os.makedirs(output_path, exist_ok=True)
+        os.makedirs(output_path, exist_ok=True)  # Ensure output directory exists
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
 
