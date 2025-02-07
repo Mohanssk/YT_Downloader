@@ -29,16 +29,25 @@ class DownloadRequest(BaseModel):
     output_path: str = "downloads"
 
 def download_video_task(url: str, output_path: str):
-    """Background task to download the video."""
+    """Background task to download the video with authentication."""
     try:
+        # Check if cookies.txt exists
+        cookies_path = "cookies.txt"
+        if not os.path.exists(cookies_path):
+            print("Warning: cookies.txt not found. Some videos may require authentication.")
+
+        # yt-dlp options
         ydl_opts = {
             "format": "best",
             "outtmpl": f"{output_path}/%(title)s.%(ext)s",
+            "cookiefile": cookies_path if os.path.exists(cookies_path) else None,  # Use cookies if available
         }
+
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(str(url), download=True)  # Convert URL to string
             filename = ydl.prepare_filename(info)
             return os.path.basename(filename) if filename else None
+
     except Exception as e:
         print(f"Download error: {e}")
         return None
