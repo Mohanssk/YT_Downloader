@@ -1,29 +1,24 @@
+import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import yt_dlp
-import os
 from typing import Optional
 
 app = FastAPI()
 
-# Add the root endpoint to prevent the 404 error
+# Ensure the downloads directory exists
+os.makedirs("downloads", exist_ok=True)
+
+# Root endpoint to check server status
 @app.get("/")
 def read_root():
     return {"message": "Server is up and running!"}
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://mohanssk.github.io/YT_Downloader/"],  # Change this to your frontend URL for better security
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Adjust this in production for security
+    allow_origins=["https://mohanssk.github.io/YT_Downloader/"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -45,28 +40,27 @@ async def download_video(request: DownloadRequest):
         raise HTTPException(status_code=400, detail="Cookies file (cookies.txt) not found. Please provide a valid cookies file.")
 
     ydl_opts = {
-        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]',  # Force MP4 format
-        'merge_output_format': 'mp4',  # Ensure final output is MP4
-        'outtmpl': f'{output_path}/%(title)s.%(ext)s',  # Output path and filename template
-        'noplaylist': True,  # Don't download playlists
-        'quiet': False,  # Show the download progress
-        'cookiefile': 'cookies.txt',  # Use cookies from cookies.txt
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]',
+        'merge_output_format': 'mp4',
+        'outtmpl': f'{output_path}/%(title)s.%(ext)s',
+        'noplaylist': True,
+        'quiet': False,
+        'cookiefile': 'cookies.txt',
     }
 
     try:
-        os.makedirs(output_path, exist_ok=True)  # Ensure output directory exists
+        os.makedirs(output_path, exist_ok=True)
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
 
-        # Check for downloaded files
         downloaded_files = sorted(
-            (f for f in os.listdir(output_path) if f.endswith('.mp4')),  # Filter MP4 files only
+            (f for f in os.listdir(output_path) if f.endswith('.mp4')),
             key=lambda f: os.path.getctime(os.path.join(output_path, f)),
             reverse=True
         )
 
         if downloaded_files:
-            filename = downloaded_files[0]  # Get the most recent file
+            filename = downloaded_files[0]
             file_url = f"/downloads/{filename}"
             return {"message": "Download completed successfully.", "file_url": file_url}
         else:
