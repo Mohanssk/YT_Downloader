@@ -28,35 +28,21 @@ class DownloadRequest(BaseModel):
     url: HttpUrl  # Ensures valid URL format
 
 def download_video_task(url: str):
-    """Background task to download the video with authentication."""
+    """Background task to download the video."""
     try:
-        # Check if cookies.txt exists
-        cookies_path = "cookies.txt"
-        if not os.path.exists(cookies_path):
-            print("Warning: cookies.txt not found. Some videos may require authentication.")
-
-        # yt-dlp options
         ydl_opts = {
             "format": "best",
-            "outtmpl": os.path.join(DOWNLOADS_DIR, "%(title)s.%(ext)s"),  # Save directly in 'downloads'
-            "cookiefile": cookies_path if os.path.exists(cookies_path) else None,  # Use cookies if available
+            "outtmpl": os.path.join(DOWNLOADS_DIR, "%(title)s.%(ext)s"),
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(str(url), download=True)  # Convert URL to string
+            info = ydl.extract_info(str(url), download=True)
             filename = ydl.prepare_filename(info)
             return os.path.basename(filename) if filename else None
 
     except Exception as e:
         print(f"Download error: {e}")
         return None
-
-@app.options("/download")
-async def options_download(response: Response):
-    """Handle CORS preflight requests."""
-    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    return response
 
 @app.get("/")
 def read_root():
@@ -67,10 +53,14 @@ async def download_video(request: DownloadRequest, background_tasks: BackgroundT
     """Handle video download request."""
     if not request.url:
         raise HTTPException(status_code=400, detail="No URL provided")
-
-    background_tasks.add_task(download_video_task, str(request.url))  # Run in background
-    return {"message": "Download started! Check /downloads later for the file."}
+    
+    filename = download_video_task(str(request.url))
+    
+    if filename:
+        file_url = f"/downloads/{filename}"
+        return {"message": "Download complete!", "file_url": file_url}
+    else:
+        raise HTTPException(status_code=500, detail="Download failed")
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))  # Default to 8000
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
