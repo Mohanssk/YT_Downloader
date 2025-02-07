@@ -24,15 +24,19 @@ os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 # Serve the downloads directory as static files
 app.mount("/downloads", StaticFiles(directory=DOWNLOADS_DIR), name="downloads")
 
+# Path to cookies file (Ensure you upload cookies.txt to this path)
+COOKIES_FILE = "cookies.txt"
+
 class DownloadRequest(BaseModel):
     url: HttpUrl  # Ensures valid URL format
 
 def download_video_task(url: str):
-    """Background task to download the video."""
+    """Background task to download the video using cookies."""
     try:
         ydl_opts = {
             "format": "best",
             "outtmpl": os.path.join(DOWNLOADS_DIR, "%(title)s.%(ext)s"),
+            "cookiefile": COOKIES_FILE,  # Use cookies for authentication
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
