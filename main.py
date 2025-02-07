@@ -26,9 +26,8 @@ app.mount("/downloads", StaticFiles(directory=DOWNLOADS_DIR), name="downloads")
 
 class DownloadRequest(BaseModel):
     url: HttpUrl  # Ensures valid URL format
-    output_path: str = "downloads"
 
-def download_video_task(url: str, output_path: str):
+def download_video_task(url: str):
     """Background task to download the video with authentication."""
     try:
         # Check if cookies.txt exists
@@ -39,7 +38,7 @@ def download_video_task(url: str, output_path: str):
         # yt-dlp options
         ydl_opts = {
             "format": "best",
-            "outtmpl": f"{output_path}/%(title)s.%(ext)s",
+            "outtmpl": os.path.join(DOWNLOADS_DIR, "%(title)s.%(ext)s"),  # Save directly in 'downloads'
             "cookiefile": cookies_path if os.path.exists(cookies_path) else None,  # Use cookies if available
         }
 
@@ -69,15 +68,8 @@ async def download_video(request: DownloadRequest, background_tasks: BackgroundT
     if not request.url:
         raise HTTPException(status_code=400, detail="No URL provided")
 
-    video_output_path = os.path.join(DOWNLOADS_DIR, request.output_path)
-    os.makedirs(video_output_path, exist_ok=True)
-
-    filename = download_video_task(str(request.url), video_output_path)  # Convert URL to string
-    if filename:
-        file_url = f"/downloads/{filename}"
-        return {"message": "Download successful!", "file_url": file_url}
-    else:
-        raise HTTPException(status_code=500, detail="Download failed")
+    background_tasks.add_task(download_video_task, str(request.url))  # Run in background
+    return {"message": "Download started! Check /downloads later for the file."}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))  # Default to 8000
