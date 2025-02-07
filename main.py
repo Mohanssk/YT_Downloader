@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Response, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, HttpUrl
@@ -31,19 +31,17 @@ class DownloadRequest(BaseModel):
     url: HttpUrl  # Ensures valid URL format
 
 def download_video_task(url: str):
-    """Background task to download the video using cookies."""
+    """Download the video using cookies."""
     try:
         ydl_opts = {
             "format": "best",
             "outtmpl": os.path.join(DOWNLOADS_DIR, "%(title)s.%(ext)s"),
             "cookiefile": COOKIES_FILE,  # Use cookies for authentication
         }
-
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(str(url), download=True)
             filename = ydl.prepare_filename(info)
             return os.path.basename(filename) if filename else None
-
     except Exception as e:
         print(f"Download error: {e}")
         return None
