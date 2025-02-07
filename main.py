@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Response, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, HttpUrl
 import yt_dlp
 import os
 import uvicorn
@@ -10,29 +11,37 @@ app = FastAPI()
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (change for production)
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
-
-# Define a request model
-class DownloadRequest(BaseModel):
-    url: str
-    output_path: str = "downloads"
 
 # Ensure the download directory exists
 DOWNLOADS_DIR = "downloads"
 os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 
+# Serve the downloads directory as static files
+app.mount("/downloads", StaticFiles(directory=DOWNLOADS_DIR), name="downloads")
+
+class DownloadRequest(BaseModel):
+    url: HttpUrl  # Ensures valid URL format
+    output_path: str = "downloads"
+
 def download_video_task(url: str, output_path: str):
     """Background task to download the video."""
-    ydl_opts = {
-        "format": "best",
-        "outtmpl": f"{output_path}/%(title)s.%(ext)s",
-    }
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
+    try:
+        ydl_opts = {
+            "format": "best",
+            "outtmpl": f"{output_path}/%(title)s.%(ext)s",
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            filename = ydl.prepare_filename(info)
+            return os.path.basename(filename)
+    except Exception as e:
+        print(f"Download error: {e}")
+        return None
 
 @app.options("/download")
 async def options_download(response: Response):
@@ -54,9 +63,12 @@ async def download_video(request: DownloadRequest, background_tasks: BackgroundT
     video_output_path = os.path.join(DOWNLOADS_DIR, request.output_path)
     os.makedirs(video_output_path, exist_ok=True)
 
-    background_tasks.add_task(download_video_task, request.url, video_output_path)
-
-    return {"message": "Download started!", "file_url": f"/static/{request.output_path}"}
+    filename = download_video_task(request.url, video_output_path)
+    if filename:
+        file_url = f"/downloads/{filename}"
+        return {"message": "Download successful!", "file_url": file_url}
+    else:
+        raise HTTPException(status_code=500, detail="Download failed")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))  # Default to 8000
