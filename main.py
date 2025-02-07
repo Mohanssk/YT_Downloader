@@ -36,9 +36,9 @@ def download_video_task(url: str, output_path: str):
             "outtmpl": f"{output_path}/%(title)s.%(ext)s",
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
+            info = ydl.extract_info(str(url), download=True)  # Convert URL to string
             filename = ydl.prepare_filename(info)
-            return os.path.basename(filename)
+            return os.path.basename(filename) if filename else None
     except Exception as e:
         print(f"Download error: {e}")
         return None
@@ -63,7 +63,7 @@ async def download_video(request: DownloadRequest, background_tasks: BackgroundT
     video_output_path = os.path.join(DOWNLOADS_DIR, request.output_path)
     os.makedirs(video_output_path, exist_ok=True)
 
-    filename = download_video_task(request.url, video_output_path)
+    filename = download_video_task(str(request.url), video_output_path)  # Convert URL to string
     if filename:
         file_url = f"/downloads/{filename}"
         return {"message": "Download successful!", "file_url": file_url}
